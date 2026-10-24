@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuGest · Gestión documental (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --border:#e5e7eb; --border-2:#d1d5db;
+    --text:#111827; --muted:#6b7280; --dim:#9ca3af;
+    --accent:#2f6fec; --accent-soft:#eaf1fe; --side:#0f1218;
+    --ok:#059669; --ok-soft:#e7f7f0; --warn:#b45309; --warn-soft:#fdf3e2; --gray-soft:#f1f2f4;
+    --font:'Geist', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  .app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+
+  /* sidebar */
+  aside{background:var(--side);color:#c9cfdb;padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+  .logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;font-size:16px;padding:4px 8px 22px}
+  .logo b{width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center;font-size:14px}
+  .nav-btn{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;background:none;border:0;cursor:pointer;color:#aab2c2;text-align:left;width:100%;transition:background .15s,color .15s}
+  .nav-btn:hover{background:#1a1f29;color:#fff}
+  .nav-btn.active{background:#1f2633;color:#fff}
+  .nav-btn svg{width:17px;height:17px}
+  .nav-btn .count{margin-left:auto;font-size:12px;color:#6b7385}
+  .side-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5e6675;padding:18px 10px 6px}
+  .dept-btn{font-size:13px;padding:7px 10px}
+  .side-foot{margin-top:auto;padding:12px 10px;border-top:1px solid #1f2530;display:flex;align-items:center;gap:10px;font-size:13px}
+  .side-foot .av{width:30px;height:30px;border-radius:50%;background:#2a3140;display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px}
+  .side-foot small{display:block;color:#6b7385;font-size:11.5px}
+
+  /* main */
+  main{padding:0 32px 40px;min-width:0}
+  .topbar{display:flex;align-items:center;gap:14px;padding:18px 0;border-bottom:1px solid var(--border);margin-bottom:26px;position:sticky;top:0;background:var(--bg);z-index:5}
+  .search{flex:1;position:relative;max-width:560px}
+  .search input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px 10px 38px;outline:none;transition:border-color .15s, box-shadow .15s}
+  .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--dim)}
+  .search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--font);font-size:11px;color:var(--dim);border:1px solid var(--border);border-radius:5px;padding:1px 6px;background:var(--bg)}
+  .demo-pill{font-size:12px;color:var(--warn);background:var(--warn-soft);padding:5px 10px;border-radius:999px;white-space:nowrap}
+  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:9px 15px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:background .15s, border-color .15s}
+  .btn svg{width:16px;height:16px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#245ed1}
+  .btn-ghost{background:var(--panel);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--border-2)}
+
+  h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin-top:4px}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+  .stat span{color:var(--muted);font-size:13px}
+  .stat b{display:block;font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:4px}
+  .stat small{color:var(--ok);font-size:12px}
+
+  /* filters + table */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .filters{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+  .filters select{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;outline:none}
+  .filters select:focus{border-color:var(--accent)}
+  .filters .result{margin-left:auto;color:var(--muted);font-size:13px}
+  .clear{background:none;border:0;color:var(--accent);cursor:pointer;font-size:13px}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-weight:500;color:var(--muted);font-size:12.5px;padding:11px 16px;background:#fafbfc;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{color:var(--text)}
+  th .arr{opacity:.4;font-size:10px;margin-left:4px}
+  th.sorted .arr{opacity:1;color:var(--accent)}
+  td{padding:12px 16px;border-bottom:1px solid #f0f1f3;vertical-align:middle}
+  tbody tr{cursor:pointer;transition:background .1s}
+  tbody tr:hover{background:#f9fafb}
+  tbody tr.sel{background:var(--accent-soft)}
+  .doc{display:flex;align-items:center;gap:12px}
+  .ficon{width:34px;height:40px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+  .pdf{background:#e5484d}.docx{background:#2f6fec}.xlsx{background:#16a34a}
+  .doc b{font-weight:500;display:block}
+  .doc small{color:var(--muted);font-size:12.5px}
+  mark{background:#fff1b8;color:inherit;border-radius:2px;padding:0 1px}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:500}
+  .b-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-gray{background:var(--gray-soft);color:var(--muted)}
+  .muted{color:var(--muted)}
+  .empty{padding:60px 20px;text-align:center;color:var(--muted)}
+  .empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+  .pager{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:var(--muted);font-size:13px}
+  .pager div{display:flex;gap:6px}
+  .pager button{border:1px solid var(--border);background:var(--panel);border-radius:7px;padding:5px 11px;cursor:pointer}
+  .pager button:disabled{opacity:.4;cursor:default}
+
+  /* drawer */
+  .drawer{position:fixed;top:0;right:0;height:100vh;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .25s ease;z-index:20;display:flex;flex-direction:column}
+  .drawer.open{transform:none;box-shadow:-20px 0 50px rgba(17,24,39,.08)}
+  .dr-head{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+  .dr-head h2{font-size:16px;font-weight:600;line-height:1.35}
+  .dr-head p{color:var(--muted);font-size:13px;margin-top:2px}
+  .x{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;border-radius:6px}
+  .x:hover{background:var(--gray-soft)}
+  .dr-body{padding:20px 22px;overflow:auto;flex:1}
+  .preview{background:#f3f4f6;border-radius:10px;padding:22px;margin-bottom:20px}
+  .page{background:#fff;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:26px 24px;font-size:10.5px;color:#374151;line-height:1.6;aspect-ratio:1/1.25;overflow:hidden}
+  .page .ph{text-align:center;font-weight:700;font-size:11px;margin-bottom:4px}
+  .page .pn{text-align:center;color:#6b7280;margin-bottom:14px}
+  .page p{margin-bottom:8px}
+  .line{height:6px;background:#e5e7eb;border-radius:3px;margin:6px 0}
+  .meta{display:grid;grid-template-columns:130px 1fr;gap:10px 12px;font-size:13.5px;margin-bottom:22px}
+  .meta dt{color:var(--muted)}
+  .dr-sec{font-weight:600;font-size:13px;margin-bottom:12px}
+  .hist{list-style:none;border-left:2px solid var(--border);margin-left:6px;padding-left:16px;display:grid;gap:14px}
+  .hist li{position:relative;font-size:13px}
+  .hist li::before{content:"";position:absolute;left:-22px;top:4px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+  .hist small{display:block;color:var(--muted)}
+  .dr-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px}
+  .scrim{position:fixed;inset:0;background:rgba(17,24,39,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:15}
+  .scrim.on{opacity:1;pointer-events:auto}
+
+  /* modal */
+  .modal{position:fixed;inset:0;display:grid;place-items:center;z-index:30;pointer-events:none;opacity:0;transition:opacity .2s}
+  .modal.on{opacity:1;pointer-events:auto}
+  .modal .bg{position:absolute;inset:0;background:rgba(17,24,39,.4)}
+  .modal form{position:relative;background:var(--panel);border-radius:14px;width:min(500px,92vw);padding:24px;box-shadow:0 30px 60px rgba(0,0,0,.2)}
+  .modal h3{font-size:18px;font-weight:600;margin-bottom:4px}
+  .modal .sub{margin-bottom:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+  .field input,.field select{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;outline:none;background:#fff}
+  .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .drop{border:1.5px dashed var(--border-2);border-radius:10px;padding:22px;text-align:center;color:var(--muted);margin-bottom:16px;cursor:pointer;transition:border-color .15s, background .15s}
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+  .drop b{color:var(--accent);font-weight:500}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+  .err{color:#dc2626;font-size:12.5px;margin-top:4px;display:none}
+
+  /* dashboard */
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .panel h3{font-size:14.5px;font-weight:600;margin-bottom:16px}
+  .bar-row{display:grid;grid-template-columns:130px 1fr 34px;align-items:center;gap:12px;margin-bottom:10px;font-size:13px}
+  .bar{height:10px;background:var(--gray-soft);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .6s ease}
+  .recent{list-style:none}
+  .recent li{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #f0f1f3;font-size:13px}
+  .recent li:last-child{border:0}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:#111827;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:all .25s;z-index:40;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    aside{display:none}
+    main{padding:0 16px 30px}
+    .stats{grid-template-columns:1fr 1fr}
+    .grid2{grid-template-columns:1fr}
+    .hide-m{display:none}
+    .demo-pill{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="logo"><b>D</b>DocuGest</div>
+    <button class="nav-btn active" data-view="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg>Documentos<span class="count" id="navCount"></span></button>
+    <button class="nav-btn" data-view="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Panel general</button>
+    <div class="side-title">Departamentos</div>
+    <div id="deptNav"></div>
+    <div class="side-foot"><span class="av">AL</span><div>Administrador<small>Municipalidad Demo</small></div></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" placeholder="Buscar por título, número, departamento o palabra clave…" autocomplete="off">
+        <kbd>/</kbd>
+      </div>
+      <span class="demo-pill">Demo · datos ficticios</span>
+      <button class="btn btn-primary" id="openUpload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Subir documento</button>
+    </div>
+
+    <section id="view-docs">
+      <div class="head">
+        <div><h1>Documentos</h1><p class="sub">Repositorio central de documentos municipales</p></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="card">
+        <div class="filters">
+          <select id="fTipo"><option value="">Todos los tipos</option></select>
+          <select id="fDepto"><option value="">Todos los departamentos</option></select>
+          <select id="fAnio"><option value="">Todos los años</option></select>
+          <select id="fEstado"><option value="">Todos los estados</option><option>Vigente</option><option>En revisión</option><option>Archivado</option></select>
+          <button class="clear" id="clear">Limpiar filtros</button>
+          <span class="result" id="result"></span>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-k="titulo">Documento <span class="arr">↕</span></th>
+            <th data-k="depto" class="hide-m">Departamento <span class="arr">↕</span></th>
+            <th data-k="fecha">Fecha <span class="arr">↕</span></th>
+            <th data-k="estado" class="hide-m">Estado <span class="arr">↕</span></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="pager"><span id="pageInfo"></span><div><button id="prev">Anterior</button><button id="next">Siguiente</button></div></div>
+      </div>
+    </section>
+
+    <section id="view-dash" hidden>
+      <div class="head"><div><h1>Panel general</h1><p class="sub">Resumen de la actividad documental</p></div></div>
+      <div class="stats" id="stats2"></div>
+      <div class="grid2">
+        <div class="panel"><h3>Documentos por departamento</h3><div id="bars"></div></div>
+        <div class="panel"><h3>Actividad reciente</h3><ul class="recent" id="recent"></ul></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" aria-hidden="true"></div>
+
+<div class="modal" id="modal">
+  <div class="bg" data-close></div>
+  <form id="upForm" novalidate>
+    <h3>Subir documento</h3>
+    <p class="sub">El documento se agregará al repositorio con estado "En revisión".</p>
+    <div class="drop" id="drop"><input type="file" id="file" hidden accept=".pdf,.docx,.xlsx"><b>Selecciona un archivo</b> o arrástralo aquí<br><small id="fileName">PDF, DOCX o XLSX</small></div>
+    <div class="field"><label for="uTitulo">Título</label><input id="uTitulo" placeholder="Ej: Decreto de aprobación de bases"><div class="err" id="eTitulo">Ingresa un título.</div></div>
+    <div class="row2">
+      <div class="field"><label for="uTipo">Tipo</label><select id="uTipo"></select></div>
+      <div class="field"><label for="uDepto">Departamento</label><select id="uDepto"></select></div>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary">Guardar documento</button></div>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TIPOS = ['Decreto','Oficio','Memorándum','Resolución','Ordinario','Contrato','Informe','Acta'];
+const DEPTOS = ['Alcaldía','Secretaría Municipal','DIDECO','Obras (DOM)','Finanzas','Tránsito','Salud','Educación'];
+const PERSONAS = ['M. González','C. Muñoz','J. Rojas','P. Díaz','F. Soto','V. Contreras','R. Silva','A. Morales'];
+const TEMAS = {
+  'Decreto':['aprobación de bases de licitación','nombramiento de comisión evaluadora','modificación presupuestaria','asignación de funciones','aprobación de convenio de colaboración'],
+  'Oficio':['solicitud de antecedentes a SUBDERE','respuesta a requerimiento de Contraloría','coordinación con Gobierno Regional','envío de informe trimestral'],
+  'Memorándum':['coordinación de operativo de invierno','instrucciones sobre feriado legal','actualización de procedimiento interno','solicitud de materiales de oficina'],
+  'Resolución':['otorgamiento de patente comercial','aprobación de permiso de edificación','concesión de subvención a junta de vecinos','autorización de evento masivo'],
+  'Ordinario':['citación a reunión de concejo','respuesta a solicitud ciudadana','derivación de reclamo vecinal'],
+  'Contrato':['servicio de recolección de residuos','mantención de áreas verdes','arriendo de vehículos municipales','soporte informático anual'],
+  'Informe':['ejecución presupuestaria trimestral','catastro de caminos rurales','gestión social del semestre','estado de establecimientos educacionales'],
+  'Acta':['sesión ordinaria del concejo','comisión de salud','reunión con dirigentes vecinales','entrega de obra']
+};
+const EXT = {'Contrato':'pdf','Decreto':'pdf','Resolución':'pdf','Informe':'docx','Oficio':'pdf','Memorándum':'docx','Ordinario':'pdf','Acta':'docx'};
+
+// datos ficticios reproducibles
+let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const pick = a => a[Math.floor(rnd() * a.length)];
+function genDocs(n){
+  const out = [];
+  for (let i = 0; i < n; i++){
+    const tipo = pick(TIPOS), tema = pick(TEMAS[tipo]);
+    const d = new Date(2026, 9, 20); d.setDate(d.getDate() - Math.floor(rnd() * 900));
+    const anio = d.getFullYear();
+    const estado = rnd() < .62 ? 'Vigente' : rnd() < .5 ? 'En revisión' : 'Archivado';
+    const ext = tipo === 'Informe' && rnd() < .4 ? 'xlsx' : EXT[tipo];
+    out.push({ id: i + 1, tipo, depto: pick(DEPTOS), titulo: `${tipo} — ${tema[0].toUpperCase() + tema.slice(1)}`,
+      numero: `${tipo.slice(0,3).toUpperCase()}-${anio}-${String(100 + Math.floor(rnd()*900))}`,
+      fecha: d.toISOString().slice(0,10), anio, estado, ext, autor: pick(PERSONAS),
+      size: (0.2 + rnd() * 4.5).toFixed(1) + ' MB', paginas: 1 + Math.floor(rnd() * 24),
+      tags: [tema.split(' ').slice(-1)[0], tipo.toLowerCase()] });
+  }
+  return out;
+}
+let docs = genDocs(64);
+try { const extra = JSON.parse(localStorage.getItem('docugest-extra') || '[]'); docs = extra.concat(docs); } catch(e){}
+
+const $ = s => document.querySelector(s);
+const state = { q:'', tipo:'', depto:'', anio:'', estado:'', sort:'fecha', dir:-1, page:1, sel:null };
+const PER = 10;
+const fmt = iso => new Date(iso + 'T12:00').toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function hl(text){
+  if (!state.q) return esc(text);
+  const t = norm(text), q = norm(state.q), i = t.indexOf(q);
+  if (i < 0) return esc(text);
+  return esc(text.slice(0,i)) + '<mark>' + esc(text.slice(i, i+q.length)) + '</mark>' + esc(text.slice(i+q.length));
+}
+const badge = e => `<span class="badge ${e==='Vigente'?'b-ok':e==='En revisión'?'b-warn':'b-gray'}">${e}</span>`;
+
+function filtered(){
+  const q = norm(state.q.trim());
+  return docs.filter(d =>
+    (!q || norm([d.titulo,d.numero,d.depto,d.autor,d.tags.join(' ')].join(' ')).includes(q)) &&
+    (!state.tipo || d.tipo === state.tipo) && (!state.depto || d.depto === state.depto) &&
+    (!state.anio || d.anio == state.anio) && (!state.estado || d.estado === state.estado)
+  ).sort((a,b) => (a[state.sort] > b[state.sort] ? 1 : a[state.sort] < b[state.sort] ? -1 : 0) * state.dir);
+}
+
+function statsHTML(){
+  const vig = docs.filter(d=>d.estado==='Vigente').length, rev = docs.filter(d=>d.estado==='En revisión').length;
+  const mes = docs.filter(d=>d.fecha >= '2026-09-20').length;
+  return `<div class="stat"><span>Total de documentos</span><b>${docs.length}</b><small>Repositorio activo</small></div>
+    <div class="stat"><span>Vigentes</span><b>${vig}</b><small>${Math.round(vig/docs.length*100)}% del total</small></div>
+    <div class="stat"><span>En revisión</span><b>${rev}</b><small style="color:var(--warn)">Pendientes de aprobación</small></div>
+    <div class="stat"><span>Últimos 30 días</span><b>${mes}</b><small>Nuevos ingresos</small></div>`;
+}
+
+function render(){
+  const list = filtered(), pages = Math.max(1, Math.ceil(list.length / PER));
+  state.page = Math.min(state.page, pages);
+  const slice = list.slice((state.page-1)*PER, state.page*PER);
+  $('#stats').innerHTML = statsHTML();
+  $('#navCount').textContent = docs.length;
+  $('#result').textContent = `${list.length} resultado${list.length===1?'':'s'}`;
+  $('#rows').innerHTML = slice.length ? slice.map(d => `
+    <tr data-id="${d.id}" class="${state.sel===d.id?'sel':''}">
+      <td><div class="doc"><span class="ficon ${d.ext}">${d.ext.toUpperCase()}</span><div><b>${hl(d.titulo)}</b><small>${hl(d.numero)} · ${d.autor}</small></div></div></td>
+      <td class="hide-m muted">${hl(d.depto)}</td>
+      <td class="muted" style="white-space:nowrap">${fmt(d.fecha)}</td>
+      <td class="hide-m">${badge(d.estado)}</td>
+    </tr>`).join('') : `<tr><td colspan="4"><div class="empty"><b>Sin resultados</b>Prueba con otra palabra o limpia los filtros.</div></td></tr>`;
+  $('#pageInfo').textContent = list.length ? `Mostrando ${(state.page-1)*PER+1}–${Math.min(state.page*PER, list.length)} de ${list.length}` : '';
+  $('#prev').disabled = state.page <= 1; $('#next').disabled = state.page >= pages;
+  document.querySelectorAll('th').forEach(th => th.classList.toggle('sorted', th.dataset.k === state.sort));
+}
+
+function renderDash(){
+  $('#stats2').innerHTML = statsHTML();
+  const counts = DEPTOS.map(d => [d, docs.filter(x=>x.depto===d).length]).sort((a,b)=>b[1]-a[1]);
+  const max = counts[0][1];
+  $('#bars').innerHTML = counts.map(([d,c]) => `<div class="bar-row"><span>${d}</span><div class="bar"><i style="width:0" data-w="${c/max*100}"></i></div><b>${c}</b></div>`).join('');
+  requestAnimationFrame(() => document.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%'));
+  const rec = [...docs].sort((a,b)=> a.fecha < b.fecha ? 1 : -1).slice(0,6);
+  $('#recent').innerHTML = rec.map(d => `<li><span class="ficon ${d.ext}" style="width:28px;height:32px;font-size:9px">${d.ext.toUpperCase()}</span><div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.titulo)}</div><span class="muted">${d.autor} · ${fmt(d.fecha)}</span></div></li>`).join('');
+}
+
+function openDoc(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  state.sel = id; render();
+  $('#drawer').innerHTML = `
+    <div class="dr-head"><span class="ficon ${d.ext}">${d.ext.toUpperCase()}</span><div><h2>${esc(d.titulo)}</h2><p>${d.numero}</p></div><button class="x" data-closedr aria-label="Cerrar">×</button></div>
+    <div class="dr-body">
+      <div class="preview"><div class="page">
+        <div class="ph">MUNICIPALIDAD DEMO</div><div class="pn">${d.tipo.toUpperCase()} N° ${d.numero.split('-').pop()} · ${fmt(d.fecha)}</div>
+        <p><b>MATERIA:</b> ${esc(d.titulo.split('— ')[1])}.</p>
+        <p><b>VISTOS:</b> Lo dispuesto en la Ley N° 18.695, Orgánica Constitucional de Municipalidades, y los antecedentes adjuntos.</p>
+        <div class="line"></div><div class="line" style="width:92%"></div><div class="line" style="width:96%"></div><div class="line" style="width:70%"></div>
+        <p style="margin-top:12px"><b>CONSIDERANDO:</b></p>
+        <div class="line"></div><div class="line" style="width:88%"></div><div class="line" style="width:94%"></div><div class="line" style="width:60%"></div>
+        <div class="line" style="margin-top:14px"></div><div class="line" style="width:80%"></div>
+      </div></div>
+      <dl class="meta">
+        <dt>Estado</dt><dd>${badge(d.estado)}</dd>
+        <dt>Tipo</dt><dd>${d.tipo}</dd>
+        <dt>Departamento</dt><dd>${d.depto}</dd>
+        <dt>Responsable</dt><dd>${d.autor}</dd>
+        <dt>Fecha</dt><dd>${fmt(d.fecha)}</dd>
+        <dt>Archivo</dt><dd>${d.ext.toUpperCase()} · ${d.size} · ${d.paginas} pág.</dd>
+      </dl>
+      <div class="dr-sec">Historial</div>
+      <ul class="hist">
+        ${d.estado==='Archivado'?`<li>Documento archivado<small>Secretaría Municipal</small></li>`:''}
+        ${d.estado!=='En revisión'?`<li>Aprobado y publicado<small>${d.autor} · ${fmt(d.fecha)}</small></li>`:''}
+        <li>Enviado a revisión<small>${d.depto}</small></li>
+        <li>Documento creado<small>${d.autor} · ${fmt(d.fecha)}</small></li>
+      </ul>
+    </div>
+    <div class="dr-foot"><button class="btn btn-primary" data-act="Descarga no disponible en la demo">Descargar</button><button class="btn btn-ghost" data-act="Enlace copiado (demo)">Compartir</button></div>`;
+  $('#drawer').classList.add('open'); $('#scrim').classList.add('on');
+}
+function closeDoc(){ $('#drawer').classList.remove('open'); $('#scrim').classList.remove('on'); state.sel = null; render(); }
+
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 2200); }
+
+// setup
+const fill = (sel, arr) => arr.forEach(v => sel.insertAdjacentHTML('beforeend', `<option>${v}</option>`));
+fill($('#fTipo'), TIPOS); fill($('#fDepto'), DEPTOS); fill($('#fAnio'), [2026,2025,2024]); fill($('#uTipo'), TIPOS); fill($('#uDepto'), DEPTOS);
+$('#deptNav').innerHTML = DEPTOS.map(d => `<button class="nav-btn dept-btn" data-dept="${d}">${d}</button>`).join('');
+
+let t; $('#q').addEventListener('input', e => { clearTimeout(t); t = setTimeout(()=>{ state.q = e.target.value; state.page = 1; render(); }, 120); });
+[['#fTipo','tipo'],['#fDepto','depto'],['#fAnio','anio'],['#fEstado','estado']].forEach(([s,k]) => $(s).addEventListener('change', e => { state[k] = e.target.value; state.page = 1; render(); }));
+$('#clear').onclick = () => { Object.assign(state,{q:'',tipo:'',depto:'',anio:'',estado:'',page:1}); ['#q','#fTipo','#fDepto','#fAnio','#fEstado'].forEach(s=>$(s).value=''); render(); };
+document.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; state.dir = state.sort === k ? -state.dir : 1; state.sort = k; render(); });
+$('#prev').onclick = () => { state.page--; render(); }; $('#next').onclick = () => { state.page++; render(); };
+$('#rows').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) openDoc(+tr.dataset.id); };
+$('#scrim').onclick = closeDoc;
+$('#drawer').onclick = e => { if (e.target.closest('[data-closedr]')) closeDoc(); const a = e.target.closest('[data-act]'); if (a) toast(a.dataset.act); };
+
+function showView(v){
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  $('#view-docs').hidden = v !== 'docs'; $('#view-dash').hidden = v !== 'dash';
+  if (v === 'dash') renderDash();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { document.querySelectorAll('.dept-btn').forEach(x=>x.classList.remove('active')); showView(b.dataset.view); });
+$('#deptNav').onclick = e => { const b = e.target.closest('[data-dept]'); if (!b) return;
+  document.querySelectorAll('.dept-btn').forEach(x=>x.classList.toggle('active', x===b));
+  showView('docs'); document.querySelector('[data-view=docs]').classList.remove('active');
+  state.depto = b.dataset.dept; $('#fDepto').value = state.depto; state.page = 1; render(); };
+
+addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); $('#q').focus(); }
+  if (e.key === 'Escape') { closeDoc(); $('#modal').classList.remove('on'); }
+});
+
+// upload
+const modal = $('#modal');
+$('#openUpload').onclick = () => { modal.classList.add('on'); setTimeout(()=>$('#uTitulo').focus(), 50); };
+modal.addEventListener('click', e => { if (e.target.closest('[data-close]')) modal.classList.remove('on'); });
+const drop = $('#drop'), file = $('#file'); let picked = null;
+drop.onclick = () => file.click();
+file.onchange = () => setFile(file.files[0]);
+['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
+function setFile(f){ if (!f) return; picked = f; $('#fileName').textContent = `${f.name} · ${(f.size/1048576).toFixed(1)} MB`; if (!$('#uTitulo').value) $('#uTitulo').value = f.name.replace(/\.[^.]+$/, ''); }
+$('#upForm').onsubmit = e => {
+  e.preventDefault();
+  const titulo = $('#uTitulo').value.trim();
+  $('#eTitulo').style.display = titulo ? 'none' : 'block'; if (!titulo) return;
+  const tipo = $('#uTipo').value, ext = picked ? (picked.name.split('.').pop().toLowerCase()) : 'pdf';
+  const id = Math.max(...docs.map(d=>d.id)) + 1, hoy = new Date().toISOString().slice(0,10);
+  const doc = { id, tipo, depto: $('#uDepto').value, titulo: `${tipo} — ${titulo}`, numero: `${tipo.slice(0,3).toUpperCase()}-2026-${100+id}`,
+    fecha: hoy, anio: 2026, estado: 'En revisión', ext: ['pdf','docx','xlsx'].includes(ext) ? ext : 'pdf', autor: 'A. Leiva',
+    size: picked ? (picked.size/1048576).toFixed(1)+' MB' : '0.4 MB', paginas: 1, tags: ['nuevo'] };
+  docs.unshift(doc);
+  try { const extra = JSON.parse(localStorage.getItem('docugest-extra') || '[]'); extra.unshift(doc); localStorage.setItem('docugest-extra', JSON.stringify(extra.slice(0,20))); } catch(e){}
+  modal.classList.remove('on'); e.target.reset(); picked = null; $('#fileName').textContent = 'PDF, DOCX o XLSX';
+  Object.assign(state,{sort:'fecha',dir:-1,page:1}); showView('docs'); render(); openDoc(id); toast('Documento agregado al repositorio');
+};
+
+render();
+</script>
+</body>
+</html>
